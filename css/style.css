@@ -1,0 +1,289 @@
+@font-face {
+  font-family: Neucha;
+  src: url('../fonts/neucha-cyrillic-400-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+  font-display: swap;
+}
+@font-face {
+  font-family: Neucha;
+  src: url('../fonts/neucha-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+2000-206F;
+  font-display: swap;
+}
+
+/* Мир серый: интерфейс нарисован карандашом, а цвет дают только зелья и вылеченные звери. */
+:root {
+  --graphite: #2c2b33;
+  --pencil: #5e5c68;
+  --ash: #bdbbc3;
+  --fog: #dfdee2;
+  --paper: #eeedf0;
+  --chalk: #fafafb;
+  --liquid: #d9d8dc;
+  --fur: #c6c4cb;
+  --belly: #e5e4e8;
+  --sketchy: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--graphite);
+  font: 400 18px/1.3 Neucha, ui-rounded, system-ui, sans-serif;
+  font-synthesis: none;
+  overscroll-behavior: none;
+}
+button { font: inherit; color: inherit; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+button:focus-visible { outline: 3px solid var(--graphite); outline-offset: 2px; }
+h1, h2, p { margin: 0; font-weight: 400; }
+.sketch-defs { position: absolute; width: 0; height: 0; }
+
+#app {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+/* Кнопки */
+.btn {
+  min-height: 52px;
+  padding: 8px 18px;
+  font-size: 21px;
+  background: var(--chalk);
+  border: 2.5px solid var(--graphite);
+  border-radius: var(--sketchy);
+  cursor: pointer;
+}
+.btn.primary { background: var(--graphite); color: var(--chalk); }
+.btn:disabled { opacity: .38; cursor: default; }
+.btn:not(:disabled):active { transform: translateY(2px) rotate(-.5deg); }
+.btn-icon {
+  min-height: 44px;
+  padding: 4px 8px;
+  background: none;
+  border: 0;
+  color: var(--pencil);
+  font-size: 17px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Общие стили зверей */
+.animal-svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.animal-svg .ol, .animal-svg .line { stroke: var(--graphite); stroke-width: 3.5; stroke-linejoin: round; stroke-linecap: round; }
+.animal-svg .line { fill: none; }
+.animal-svg .thick { stroke-width: 5; }
+.animal-svg .fur { fill: var(--fur); transition: fill 1.1s ease; }
+.animal-svg .belly { fill: var(--belly); transition: fill 1.1s ease; }
+.animal-svg .ink { fill: var(--graphite); }
+.animal-svg .spark { fill: var(--chalk); }
+.animal-svg .tooth { fill: var(--chalk); }
+.animal-svg .cheeks { fill: var(--graphite); opacity: 0; }
+.animal-svg .eyes-happy, .animal-svg .mouth-happy { display: none; }
+.cured .animal-svg .eyes-happy, .cured .animal-svg .mouth-happy { display: inline; }
+.cured .animal-svg .eyes-sad, .cured .animal-svg .mouth-sad { display: none; }
+.cured .animal-svg .cheeks { fill: #fff; opacity: .3; }
+.ghost { fill: var(--fog); stroke: var(--ash); stroke-width: 3.5; stroke-dasharray: 9 8; }
+.ghost-mark { font-size: 58px; fill: var(--ash); }
+
+/* Полка */
+.shelf { max-width: 1040px; margin: 0 auto; padding: 18px 16px 28px; }
+.shelf-head { position: relative; text-align: center; padding: 6px 0 18px; }
+.shelf-head .btn-icon { position: absolute; top: -8px; right: 0; }
+.title {
+  margin-top: 26px;
+  font-size: clamp(50px, 14vw, 100px);
+  line-height: 1;
+  transition: color .4s;
+}
+.title span { transition: color .6s; }
+.summary { margin: 10px auto 0; max-width: 34ch; font-size: 21px; color: var(--pencil); }
+.queue { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 14px 10px; }
+.portrait {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 4px 10px;
+  background: none;
+  border: 2px solid transparent;
+  border-radius: var(--sketchy);
+  cursor: pointer;
+}
+.portrait-art { display: block; width: 100%; max-width: 120px; aspect-ratio: 10 / 9; }
+.portrait-name { font-size: 16px; line-height: 1.1; min-height: 2.2em; display: flex; align-items: center; text-align: center; }
+.portrait:disabled { cursor: default; color: var(--ash); }
+.portrait.current { background: var(--chalk); border-color: var(--graphite); }
+.portrait:not(:disabled):active { transform: scale(.97); }
+.stars { font-size: 18px; letter-spacing: 1px; }
+.stars.next { font-size: 15px; letter-spacing: 0; color: var(--pencil); }
+
+.intro {
+  position: fixed; inset: 0; z-index: 5;
+  display: grid; place-items: center; padding: 16px;
+  background: rgb(44 43 51 / .55);
+}
+.intro-card {
+  max-width: 420px; padding: 24px 22px;
+  display: grid; gap: 12px;
+  background: var(--chalk);
+  border: 2.5px solid var(--graphite);
+  border-radius: var(--sketchy);
+  font-size: 20px;
+}
+.intro-card h2 { font-size: 30px; line-height: 1.1; }
+.intro-card .btn { margin-top: 6px; }
+
+/* Варка */
+.play {
+  min-height: 100dvh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2px 14px 12px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 4px;
+}
+.play-head { display: flex; align-items: center; justify-content: space-between; margin: 0 -8px; }
+.attempts { color: var(--pencil); }
+.patient { display: grid; grid-template-columns: minmax(96px, 36%) 1fr; align-items: center; gap: 8px; }
+.animal { aspect-ratio: 10 / 9; }
+.animal.sneeze { animation: sneeze .5s ease; }
+.cured .animal { animation: joy .8s ease; }
+.bubble {
+  position: relative;
+  padding: 8px 12px 10px;
+  background: var(--chalk);
+  border: 2.5px solid var(--graphite);
+  border-radius: var(--sketchy);
+  display: grid;
+  gap: 2px;
+}
+.bubble h2 { font-size: 21px; line-height: 1.1; }
+.bubble p { font-size: 17px; line-height: 1.18; }
+.sample { display: flex; align-items: center; gap: 8px; color: var(--pencil); font-size: 16px; line-height: 1.1; }
+.blot-svg { width: 62px; height: 56px; flex: none; }
+.blot { fill: var(--sample); stroke: var(--graphite); stroke-width: 2.5; }
+
+.brew { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 0; }
+.cauldron { position: relative; width: min(66vw, 30dvh, 300px); flex: none; }
+.cauldron-svg { display: block; width: 100%; overflow: visible; }
+.pot { fill: #4b4a54; stroke: var(--graphite); stroke-width: 5; stroke-linecap: round; }
+.pot-handle { fill: none; stroke: var(--graphite); stroke-width: 7; stroke-linecap: round; }
+.rim { fill: none; stroke: var(--graphite); stroke-width: 9; }
+.liquid { fill: var(--liquid); transition: fill .35s ease; }
+.bubbles circle { fill: #fff; opacity: 0; }
+.brewing .bubbles circle { animation: bubble .55s ease-in-out infinite; }
+.brewing .bubbles circle:nth-child(2) { animation-delay: .17s; }
+.brewing .bubbles circle:nth-child(3) { animation-delay: .34s; }
+.brewing .cauldron { animation: simmer .25s linear infinite alternate; }
+.falling { position: absolute; left: 50%; top: -14%; width: 22px; pointer-events: none; }
+.falling-drop { position: absolute; left: -11px; top: 0; width: 22px; animation: fall .34s cubic-bezier(.5, 0, 1, .6) forwards; }
+
+.drop-row { display: flex; justify-content: center; gap: 3px; }
+.slot { display: block; width: 18px; height: 23px; opacity: .3; }
+.slot.filled { opacity: 1; }
+.message { min-height: 2.5em; max-width: 44ch; text-align: center; font-size: 18px; line-height: 1.2; }
+
+.controls { display: grid; gap: 8px; }
+.bottles { display: flex; justify-content: center; gap: 4px; }
+.bottle-slot { position: relative; flex: 0 1 92px; min-width: 0; }
+.bottle {
+  width: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 2px 0 0;
+  background: none; border: 0; cursor: pointer;
+}
+.bottle:disabled { opacity: .45; cursor: default; }
+.bottle:not(:disabled):active .bottle-svg { transform: translateY(5px) rotate(-5deg); }
+.bottle-svg { width: min(100%, 60px); height: 72px; overflow: visible; }
+.bottle-name { font-size: 16px; line-height: 1.15; }
+.glass { fill: none; stroke: var(--graphite); stroke-width: 3; stroke-linejoin: round; }
+.cork { fill: var(--pencil); stroke: var(--graphite); stroke-width: 3; }
+.mystery-mark { font-size: 32px; fill: var(--graphite); }
+.minus {
+  position: absolute; top: -4px; right: 0;
+  min-width: 44px; height: 36px;
+  padding: 0 7px;
+  font-size: 17px; line-height: 1;
+  background: var(--chalk);
+  border: 2px solid var(--graphite);
+  border-radius: 18px;
+  cursor: pointer;
+}
+.minus[hidden] { display: none; }
+.minus .count { margin-left: 3px; }
+.actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; }
+
+.reward { display: grid; gap: 6px; text-align: center; }
+.reward-stars { font-size: 42px; line-height: 1; letter-spacing: 3px; animation: pop .45s ease; }
+.reward-text { font-size: 19px; line-height: 1.2; }
+
+/* iPad вертикально: та же колонка, что на телефоне, только крупнее */
+@media (min-width: 720px) and (orientation: portrait) {
+  .play { padding-inline: 32px; padding-bottom: 20px; }
+  .patient { width: min(100%, 680px); justify-self: center; gap: 20px; }
+  .bubble { padding: 14px 18px; gap: 6px; }
+  .bubble h2 { font-size: 28px; }
+  .bubble p { font-size: 21px; }
+  .sample { font-size: 19px; }
+  .blot-svg { width: 88px; height: 80px; }
+  .cauldron { width: min(62vw, 32dvh, 460px); }
+  .message { font-size: 22px; }
+  .bottle-svg { width: 84px; height: 100px; }
+  .bottle-name { font-size: 20px; }
+  .slot { width: 24px; height: 30px; }
+  .controls { justify-self: center; width: min(100%, 560px); }
+}
+
+/* iPad горизонтально и компьютер: слева зверь, справа котёл */
+@media (min-width: 720px) and (orientation: landscape) {
+  .play {
+    grid-template-columns: minmax(280px, 2fr) 3fr;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    column-gap: 28px;
+    padding-inline: 24px;
+  }
+  .play-head { grid-column: 1 / -1; margin: 0; }
+  .patient { grid-column: 1; grid-row: 2 / 4; grid-template-columns: 1fr; align-content: center; justify-items: center; gap: 14px; }
+  .animal { width: min(100%, 300px); }
+  .bubble { width: 100%; max-width: 380px; padding: 14px 18px; gap: 6px; }
+  .bubble h2 { font-size: 28px; }
+  .bubble p { font-size: 21px; }
+  .sample { font-size: 19px; }
+  .blot-svg { width: 88px; height: 80px; }
+  .brew, .controls { grid-column: 2; }
+  .cauldron { width: min(52vw, 36dvh, 400px); }
+  .message { font-size: 21px; }
+  .bottle-svg { width: 78px; height: 94px; }
+  .bottle-name { font-size: 19px; }
+  .slot { width: 24px; height: 30px; }
+  .controls { justify-self: center; width: min(100%, 560px); padding-bottom: 8px; }
+}
+
+/* Телефон лёжа: всё в одну колонку не влезает, поэтому экран прокручивается */
+@media (max-height: 520px) and (orientation: landscape) {
+  .play { min-height: 0; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; column-gap: 16px; }
+  .play-head { grid-column: 1 / -1; }
+  .patient { grid-column: 1; grid-row: 2; grid-template-columns: 110px 1fr; }
+  .animal { width: 110px; }
+  .bubble { max-width: none; padding: 6px 10px; }
+  .bubble h2 { font-size: 19px; }
+  .bubble p { font-size: 15px; }
+  .blot-svg { width: 48px; height: 44px; }
+  .brew { grid-column: 1; grid-row: 3; }
+  .cauldron { width: 130px; }
+  .message { font-size: 16px; }
+  .controls { grid-column: 2; grid-row: 2 / 4; align-content: center; width: 100%; }
+  .bottle-svg { width: 56px; height: 68px; }
+}
+
+@keyframes fall { from { transform: translateY(0); opacity: 1; } to { transform: translateY(68px) scale(.7); opacity: .2; } }
+@keyframes simmer { from { transform: translateX(-1.5px); } to { transform: translateX(1.5px); } }
+@keyframes bubble { 0%, 100% { opacity: 0; transform: translateY(6px); } 50% { opacity: .55; transform: translateY(-6px); } }
+@keyframes sneeze { 0%, 100% { transform: none; } 25% { transform: rotate(-5deg) translateX(-5px); } 55% { transform: rotate(5deg) translateX(5px); } 80% { transform: rotate(-2deg); } }
+@keyframes joy { 0%, 100% { transform: none; } 35% { transform: translateY(-16px) scale(1.06); } 65% { transform: translateY(0) scale(.98); } }
+@keyframes pop { from { transform: scale(.5); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
